@@ -310,7 +310,7 @@ func ProbeIP(ip string) ProbeResult {
 	}
 	wg.Wait()
 
-	// 4. OS Guessing based on ports
+	// 4. Web Title
 	hasPort := func(p string) bool {
 		for _, v := range res.Ports {
 			if strings.HasPrefix(v, p+" ") {
@@ -320,23 +320,37 @@ func ProbeIP(ip string) ProbeResult {
 		return false
 	}
 
-	if hasPort("445") || hasPort("135") || hasPort("3389") {
-		res.OSGuess = "Windows"
-	} else if hasPort("22") {
-		res.OSGuess = "Linux / macOS / Device"
-	} else if len(res.Ports) > 0 {
-		res.OSGuess = "Other / IoT Device"
-	}
-
-	// 5. Web Title
 	if hasPort("80") {
 		res.WebTitle = getWebTitle(ip, "80")
+	}
+	if res.WebTitle == "" && hasPort("8080") {
+		res.WebTitle = getWebTitle(ip, "8080")
 	}
 	if res.WebTitle == "" && hasPort("443") {
 		res.WebTitle = getWebTitle(ip, "443")
 	}
 	if res.WebTitle == "" && hasPort("5000") {
 		res.WebTitle = getWebTitle(ip, "5000")
+	}
+
+	// 5. OS Guessing based on ports & web title
+	lowerTitle := strings.ToLower(res.WebTitle)
+	if strings.Contains(lowerTitle, "qnap") || strings.Contains(lowerTitle, "synology") || strings.Contains(lowerTitle, "truenas") || strings.Contains(lowerTitle, "nas") || hasPort("5000") || hasPort("5001") {
+		res.OSGuess = "Linux / NAS"
+	} else if strings.Contains(lowerTitle, "router") || strings.Contains(lowerTitle, "openwrt") || strings.Contains(lowerTitle, "tp-link") {
+		res.OSGuess = "Router / Network Device"
+	} else if hasPort("3389") || hasPort("135") {
+		res.OSGuess = "Windows"
+	} else if hasPort("445") {
+		if hasPort("22") {
+			res.OSGuess = "Linux / NAS (Samba+SSH)"
+		} else {
+			res.OSGuess = "Windows"
+		}
+	} else if hasPort("22") {
+		res.OSGuess = "Linux / macOS"
+	} else if len(res.Ports) > 0 {
+		res.OSGuess = "Other / IoT Device"
 	}
 
 	return res
