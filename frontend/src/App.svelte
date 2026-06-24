@@ -13,6 +13,9 @@
   // Format: "192.168.1.5" -> { ip: "192.168.1.5", status: "inactive", mac: "" }
   let ipGrid: Array<{ ip: string; status: string; mac: string; lastOctet: string }> = [];
 
+  // History State
+  let history: string[] = [];
+
   // Details Panel State
   let showPanel = false;
   let isProbing = false;
@@ -21,6 +24,11 @@
   let probeResult: any = null;
 
   onMount(async () => {
+    try {
+      const saved = localStorage.getItem("lanmap_history");
+      if (saved) history = JSON.parse(saved);
+    } catch(e) {}
+
     try {
       subnet = await GetDefaultSubnet();
       initGrid(subnet);
@@ -92,6 +100,13 @@
 
   function startScan() {
     if (isScanning) return;
+    
+    // Save to history (keep max 10, move latest to top)
+    if (subnet) {
+      history = [subnet, ...history.filter(h => h !== subnet)].slice(0, 10);
+      localStorage.setItem("lanmap_history", JSON.stringify(history));
+    }
+
     initGrid(subnet);
     ScanSubnet(subnet, method);
   }
@@ -132,10 +147,16 @@
         <input 
           type="text" 
           value={subnet} 
+          list="subnet-history"
           on:input={handleSubnetChange}
           class="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-40 transition-colors"
           placeholder="192.168.1.0/24"
         />
+        <datalist id="subnet-history">
+          {#each history as h}
+            <option value={h}></option>
+          {/each}
+        </datalist>
         
         <div class="relative">
           <select bind:value={method} class="bg-gray-800 border border-gray-600 rounded pl-3 pr-8 py-1.5 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer appearance-none transition-colors hover:border-gray-500 text-gray-200">
