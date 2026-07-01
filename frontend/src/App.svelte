@@ -15,6 +15,7 @@
 
   // History State
   let history: string[] = [];
+  let showHistoryDropdown = false;
 
   // Details Panel State
   let showPanel = false;
@@ -103,6 +104,12 @@
     initGrid(val);
   }
 
+  function selectHistory(val: string) {
+    subnet = val;
+    initGrid(val);
+    showHistoryDropdown = false;
+  }
+
   function startScan() {
     if (isScanning) return;
     
@@ -150,19 +157,46 @@
       </div>
       
       <div class="flex items-center space-x-3 bg-gray-900/50 p-1.5 rounded-lg border border-gray-700/50">
-        <input 
-          type="text" 
-          value={subnet} 
-          list="subnet-history"
-          on:input={handleSubnetChange}
-          class="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-40 transition-colors"
-          placeholder="192.168.1.0/24"
-        />
-        <datalist id="subnet-history">
-          {#each history as h}
-            <option value={h}></option>
-          {/each}
-        </datalist>
+        <div class="relative flex items-center">
+          <input 
+            type="text" 
+            value={subnet} 
+            on:input={handleSubnetChange}
+            on:focus={() => { if (history.length > 0) showHistoryDropdown = true; }}
+            class="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-gray-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-40 transition-colors pr-7"
+            placeholder="192.168.1.0/24"
+          />
+          <button 
+            type="button"
+            on:click={() => showHistoryDropdown = !showHistoryDropdown}
+            class="absolute right-0 inset-y-0 px-2 flex items-center text-gray-400 hover:text-gray-200 cursor-pointer"
+            title="Show History"
+          >
+            <svg class="w-4 h-4 transition-transform duration-200 {showHistoryDropdown ? 'transform rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          
+          {#if showHistoryDropdown && history.length > 0}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="fixed inset-0 z-30" on:click={() => showHistoryDropdown = false}></div>
+            <div class="absolute top-full left-0 mt-1.5 w-44 bg-gray-800 border border-gray-600 rounded-lg shadow-2xl z-40 overflow-hidden py-1">
+              <div class="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-semibold border-b border-gray-700/60 mb-0.5">Saved Subnets</div>
+              {#each history as h}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div 
+                  on:click={() => selectHistory(h)}
+                  class="px-3 py-1.5 text-sm text-gray-200 hover:bg-emerald-600 hover:text-white cursor-pointer transition-colors flex items-center justify-between"
+                >
+                  <span class="font-mono">{h}</span>
+                  {#if h === subnet}
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
         
         <div class="relative">
           <select bind:value={method} class="bg-gray-800 border border-gray-600 rounded pl-3 pr-8 py-1.5 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer appearance-none transition-colors hover:border-gray-500 text-gray-200">
