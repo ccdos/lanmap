@@ -6,6 +6,10 @@ export function GetDefaultSubnet():Promise<string>;
 
 export function Greet(arg1:string):Promise<string>;
 
+export function LoadHistory():Promise<Array<string>>;
+
 export function ProbeIP(arg1:string):Promise<main.ProbeResult>;
+
+export function SaveHistory(arg1:Array<string>):Promise<void>;
 
 export function ScanSubnet(arg1:string,arg2:string):Promise<void>;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { GetDefaultSubnet, ScanSubnet, ProbeIP } from "../wailsjs/go/main/App.js";
+  import { GetDefaultSubnet, ScanSubnet, ProbeIP, LoadHistory, SaveHistory } from "../wailsjs/go/main/App.js";
   import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime.js";
 
   let subnet = "192.168.1.0/24";
@@ -25,8 +25,13 @@
 
   onMount(async () => {
     try {
-      const saved = localStorage.getItem("lanmap_history");
-      if (saved) history = JSON.parse(saved);
+      const saved = await LoadHistory();
+      if (saved && saved.length > 0) {
+        history = saved;
+      } else {
+        const localSaved = localStorage.getItem("lanmap_history");
+        if (localSaved) history = JSON.parse(localSaved);
+      }
     } catch(e) {}
 
     try {
@@ -105,6 +110,7 @@
     if (subnet) {
       history = [subnet, ...history.filter(h => h !== subnet)].slice(0, 10);
       localStorage.setItem("lanmap_history", JSON.stringify(history));
+      SaveHistory(history);
     }
 
     initGrid(subnet);

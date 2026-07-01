@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 )
 
 // App struct
@@ -39,5 +42,34 @@ func (a *App) ScanSubnet(subnet string, method string) {
 // ProbeIP returns detailed information about an IP address synchronously
 func (a *App) ProbeIP(ip string) ProbeResult {
 	return ProbeIP(ip)
+}
+
+func getHistoryFilePath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ".lanmap_history.json"
+	}
+	return filepath.Join(home, ".lanmap_history.json")
+}
+
+// LoadHistory loads the subnet scan history from disk
+func (a *App) LoadHistory() []string {
+	file, err := os.ReadFile(getHistoryFilePath())
+	if err != nil {
+		return []string{}
+	}
+	var history []string
+	if err := json.Unmarshal(file, &history); err != nil {
+		return []string{}
+	}
+	return history
+}
+
+// SaveHistory saves the subnet scan history to disk
+func (a *App) SaveHistory(history []string) {
+	data, err := json.MarshalIndent(history, "", "  ")
+	if err == nil {
+		_ = os.WriteFile(getHistoryFilePath(), data, 0644)
+	}
 }
 
